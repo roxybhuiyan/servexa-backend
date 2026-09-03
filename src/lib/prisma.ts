@@ -10,7 +10,10 @@ if (!config.databaseUrl) {
   throw new Error('DATABASE_URL is required to initialize Prisma.');
 }
 
-const adapter = new PrismaPg(config.databaseUrl);
+const runtimeUrl = new URL(config.databaseUrl);
+runtimeUrl.searchParams.set('connect_timeout', '30');
+
+const adapter = new PrismaPg(runtimeUrl.toString());
 const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
 
 if (config.env !== 'production') {
