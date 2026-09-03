@@ -6,6 +6,7 @@ import providerRouter from '../modules/Provider/provider.route.js';
 import userRouter from '../modules/User/user.route.js';
 import categoryRouter from '../modules/Category/category.route.js';
 import serviceRouter from '../modules/Service/service.route.js';
+import bookingRouter from '../modules/Booking/booking.route.js';
 
 const apiV1Router = Router();
 
@@ -15,5 +16,6 @@ apiV1Router.use('/providers', providerRouter);
 apiV1Router.use('/admin', adminRouter);
 apiV1Router.use('/categories', categoryRouter);
 apiV1Router.use('/services', serviceRouter);
+apiV1Router.use('/bookings', bookingRouter);
 
 export default apiV1Router;

@@ -10,11 +10,18 @@ import {
   listMine as listAvailability,
   updateMine as updateAvailability,
 } from '../Availability/availability.controller.js';
+import { accept, complete, getProviderMine, listProviderMine, reject, start } from '../Booking/booking.controller.js';
 
 const providerRouter = Router();
 
 providerRouter.get('/me', auth(UserRole.PROVIDER), getMe);
 providerRouter.patch('/me', auth(UserRole.PROVIDER), updateMe);
+providerRouter.get('/me/bookings', auth(UserRole.PROVIDER), listProviderMine);
+providerRouter.get('/me/bookings/:id', auth(UserRole.PROVIDER), getProviderMine);
+providerRouter.patch('/me/bookings/:id/accept', auth(UserRole.PROVIDER), accept);
+providerRouter.patch('/me/bookings/:id/reject', auth(UserRole.PROVIDER), reject);
+providerRouter.patch('/me/bookings/:id/start', auth(UserRole.PROVIDER), start);
+providerRouter.patch('/me/bookings/:id/complete', auth(UserRole.PROVIDER), complete);
 providerRouter.get('/me/availability', auth(UserRole.PROVIDER), listAvailability);
 providerRouter.post('/me/availability', auth(UserRole.PROVIDER), createAvailability);
 providerRouter.patch('/me/availability/:id', auth(UserRole.PROVIDER), updateAvailability);

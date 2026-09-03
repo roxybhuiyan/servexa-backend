@@ -1,5 +1,6 @@
 import app from './app.js';
 import config from './config/index.js';
+import prisma from './lib/prisma.js';
 
 const server = app.listen(config.port, () => {
   console.info(`Servexa API is listening on port ${config.port} (${config.env}).`);
@@ -7,7 +8,7 @@ const server = app.listen(config.port, () => {
 
 const shutdown = (): void => {
   server.close(() => {
-    process.exit(0);
+    void prisma.$disconnect().finally(() => process.exit(0));
   });
 };
 
