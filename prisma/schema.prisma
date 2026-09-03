@@ -1,0 +1,262 @@
+generator client {
+  provider   = "prisma-client"
+  output     = "../src/generated/prisma"
+  moduleFormat = "esm"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CUSTOMER
+  PROVIDER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BLOCKED
+}
+
+enum ProviderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ServiceStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  SSLCOMMERZ
+  STRIPE
+}
+
+model User {
+  id               String           @id @default(cuid())
+  name             String
+  email            String           @unique
+  password         String
+  phone            String
+  role             UserRole         @default(CUSTOMER)
+  status           UserStatus       @default(ACTIVE)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+  providerProfile  ProviderProfile?
+  customerBookings Booking[]        @relation("CustomerBookings")
+  reviews          Review[]
+  payments         Payment[]
+  refreshTokens    RefreshToken[]
+  auditLogs        AuditLog[]
+
+  @@index([role, status])
+  @@index([deletedAt])
+}
+
+model ProviderProfile {
+  id           String             @id @default(cuid())
+  userId       String             @unique
+  businessName String
+  bio          String?
+  phone        String
+  city         String
+  address      String
+  status       ProviderStatus     @default(PENDING)
+  rating       Decimal            @default(0) @db.Decimal(3, 2)
+  totalReviews Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  deletedAt    DateTime?
+  user         User               @relation(fields: [userId], references: [id])
+  services     Service[]
+  slots        AvailabilitySlot[]
+  bookings     Booking[]
+
+  @@index([status])
+  @@index([city])
+  @@index([deletedAt])
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  services    Service[]
+
+  @@index([deletedAt])
+}
+
+model Service {
+  id          String             @id @default(cuid())
+  providerId  String
+  categoryId  String
+  title       String
+  slug        String             @unique
+  description String?
+  price       Decimal            @db.Decimal(12, 2)
+  duration    Int
+  imageUrl    String?
+  serviceArea String?
+  status      ServiceStatus      @default(ACTIVE)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  deletedAt   DateTime?
+  provider    ProviderProfile    @relation(fields: [providerId], references: [id])
+  category    Category           @relation(fields: [categoryId], references: [id])
+  slots       AvailabilitySlot[]
+  bookings    Booking[]
+  reviews     Review[]
+
+  @@index([providerId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([price])
+  @@index([createdAt])
+  @@index([deletedAt])
+}
+
+model AvailabilitySlot {
+  id         String          @id @default(cuid())
+  providerId String
+  serviceId  String
+  startTime  DateTime
+  endTime    DateTime
+  isBooked   Boolean         @default(false)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  provider   ProviderProfile @relation(fields: [providerId], references: [id])
+  service    Service         @relation(fields: [serviceId], references: [id])
+  booking    Booking?        @relation("BookingSlot")
+
+  @@unique([providerId, serviceId, startTime, endTime])
+  @@index([providerId])
+  @@index([serviceId])
+  @@index([startTime])
+  @@index([isBooked])
+}
+
+model Booking {
+  id           String           @id @default(cuid())
+  customerId   String
+  providerId   String
+  serviceId    String
+  slotId       String           @unique
+  status       BookingStatus    @default(PENDING)
+  servicePrice Decimal          @db.Decimal(12, 2)
+  platformFee  Decimal          @db.Decimal(12, 2)
+  totalAmount  Decimal          @db.Decimal(12, 2)
+  notes        String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  cancelledAt  DateTime?
+  completedAt  DateTime?
+  customer     User             @relation("CustomerBookings", fields: [customerId], references: [id])
+  provider     ProviderProfile  @relation(fields: [providerId], references: [id])
+  service      Service          @relation(fields: [serviceId], references: [id])
+  slot         AvailabilitySlot @relation("BookingSlot", fields: [slotId], references: [id])
+  payment      Payment?
+  review       Review?
+
+  @@index([customerId])
+  @@index([providerId])
+  @@index([serviceId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Payment {
+  id              String          @id @default(cuid())
+  bookingId       String          @unique
+  userId          String
+  amount          Decimal         @db.Decimal(12, 2)
+  status          PaymentStatus   @default(UNPAID)
+  provider        PaymentProvider
+  transactionId   String?         @unique
+  gatewayResponse Json?
+  paidAt          DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  booking         Booking         @relation(fields: [bookingId], references: [id])
+  user            User            @relation(fields: [userId], references: [id])
+
+  @@index([status])
+}
+
+model Review {
+  id         String    @id @default(cuid())
+  bookingId  String    @unique
+  customerId String
+  serviceId  String
+  rating     Int
+  comment    String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+  booking    Booking   @relation(fields: [bookingId], references: [id])
+  customer   User      @relation(fields: [customerId], references: [id])
+  service    Service   @relation(fields: [serviceId], references: [id])
+
+  @@index([customerId])
+  @@index([serviceId])
+  @@index([deletedAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String
+  oldData    Json?
+  newData    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
