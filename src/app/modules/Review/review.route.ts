@@ -1,0 +1,2 @@
+import { Router } from 'express'; import { UserRole } from '../../../generated/prisma/enums.js'; import auth from '../../middlewares/auth.js'; import { create, mine, remove, update } from './review.controller.js';
+const reviewRouter=Router(); reviewRouter.post('/',auth(UserRole.CUSTOMER),create); reviewRouter.get('/me',auth(UserRole.CUSTOMER),mine); reviewRouter.patch('/:id',auth(UserRole.CUSTOMER),update); reviewRouter.delete('/:id',auth(UserRole.CUSTOMER),remove); export default reviewRouter;

@@ -7,12 +7,14 @@ import AppError from './app/errors/AppError.js';
 import helmet from 'helmet';
 
 import apiV1Router from './app/routes/index.js';
+import { webhook as stripeWebhook } from './app/modules/Payment/payment.controller.js';
 import sendResponse from './shared/sendResponse.js';
 
 const app = express();
 
 app.use(helmet());
 app.use(cors());
+app.post('/api/v1/payments/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 app.use(express.json());
 app.use(
   rateLimit({
@@ -27,6 +29,22 @@ app.get('/health', (_req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: 200,
     message: 'Servexa API is healthy',
+    data: null,
+  });
+});
+
+app.get('/payments/success', (_req: Request, res: Response) => {
+  sendResponse(res, {
+    statusCode: 200,
+    message: 'Payment completed. Final status is confirmed by Stripe webhook.',
+    data: null,
+  });
+});
+
+app.get('/payments/cancel', (_req: Request, res: Response) => {
+  sendResponse(res, {
+    statusCode: 200,
+    message: 'Stripe Checkout was cancelled. Payment status was not changed by this redirect.',
     data: null,
   });
 });

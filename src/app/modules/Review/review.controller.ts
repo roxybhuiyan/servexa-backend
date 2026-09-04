@@ -1,0 +1,17 @@
+import type { RequestHandler } from 'express';
+import sendResponse from '../../../shared/sendResponse.js';
+import AppError from '../../errors/AppError.js';
+import { requireRouteId } from '../Category/category.controller.js';
+import { adminReviewListValidationSchema, createReviewValidationSchema, reviewListValidationSchema, updateReviewValidationSchema } from './review.validation.js';
+import { createReview, listAdminReviews, listMyReviews, listPublicReviews, ratingSummary, softDeleteReview, updateReview } from './review.service.js';
+const actor = (req: Parameters<RequestHandler>[0]) => { if (!req.user) throw new AppError(401, 'Authentication is required'); return req.user.id; }; const context = (req: Parameters<RequestHandler>[0]) => ({ ipAddress: req.ip, userAgent: req.get('user-agent') ?? undefined });
+export const create: RequestHandler = async (req,res,next)=>{try{sendResponse(res,{statusCode:201,message:'Review created',data:await createReview(actor(req),createReviewValidationSchema.parse(req.body),context(req))});}catch(e){next(e);}};
+export const mine: RequestHandler = async (req,res,next)=>{try{sendResponse(res,{statusCode:200,message:'Reviews retrieved',data:await listMyReviews(actor(req),reviewListValidationSchema.parse(req.query))});}catch(e){next(e);}};
+export const update: RequestHandler = async (req,res,next)=>{try{sendResponse(res,{statusCode:200,message:'Review updated',data:await updateReview(actor(req),requireRouteId(req.params.id),updateReviewValidationSchema.parse(req.body),context(req))});}catch(e){next(e);}};
+export const remove: RequestHandler = async (req,res,next)=>{try{await softDeleteReview(actor(req),requireRouteId(req.params.id),false,context(req));sendResponse(res,{statusCode:200,message:'Review deleted',data:null});}catch(e){next(e);}};
+export const publicService: RequestHandler = async (req,res,next)=>{try{sendResponse(res,{statusCode:200,message:'Reviews retrieved',data:await listPublicReviews({serviceId:requireRouteId(req.params.serviceId)},reviewListValidationSchema.parse(req.query))});}catch(e){next(e);}};
+export const publicProvider: RequestHandler = async (req,res,next)=>{try{sendResponse(res,{statusCode:200,message:'Reviews retrieved',data:await listPublicReviews({providerId:requireRouteId(req.params.providerId)},reviewListValidationSchema.parse(req.query))});}catch(e){next(e);}};
+export const serviceSummary: RequestHandler = async (req,res,next)=>{try{sendResponse(res,{statusCode:200,message:'Rating summary retrieved',data:await ratingSummary({serviceId:requireRouteId(req.params.serviceId)})});}catch(e){next(e);}};
+export const providerSummary: RequestHandler = async (req,res,next)=>{try{sendResponse(res,{statusCode:200,message:'Rating summary retrieved',data:await ratingSummary({providerId:requireRouteId(req.params.providerId)})});}catch(e){next(e);}};
+export const adminList: RequestHandler = async (req,res,next)=>{try{sendResponse(res,{statusCode:200,message:'Reviews retrieved',data:await listAdminReviews(adminReviewListValidationSchema.parse(req.query))});}catch(e){next(e);}};
+export const adminRemove: RequestHandler = async (req,res,next)=>{try{await softDeleteReview(actor(req),requireRouteId(req.params.id),true,context(req));sendResponse(res,{statusCode:200,message:'Review deleted',data:null});}catch(e){next(e);}};

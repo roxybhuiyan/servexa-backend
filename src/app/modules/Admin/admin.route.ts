@@ -14,6 +14,7 @@ import {
   updateProviderStatus,
   updateUserStatus,
 } from './admin.controller.js';
+import { adminList, adminRemove } from '../Review/review.controller.js';
 
 const adminRouter = Router();
 
@@ -28,5 +29,7 @@ adminRouter.get('/categories', getCategories);
 adminRouter.post('/categories', createCategory);
 adminRouter.patch('/categories/:id', patchCategory);
 adminRouter.delete('/categories/:id', deleteCategory);
+adminRouter.get('/reviews', adminList);
+adminRouter.delete('/reviews/:id', adminRemove);
 
 export default adminRouter;

@@ -11,6 +11,7 @@ import {
   updateMine as updateAvailability,
 } from '../Availability/availability.controller.js';
 import { accept, complete, getProviderMine, listProviderMine, reject, start } from '../Booking/booking.controller.js';
+import { publicProvider, providerSummary } from '../Review/review.controller.js';
 
 const providerRouter = Router();
 
@@ -30,6 +31,8 @@ providerRouter.get('/me/services', auth(UserRole.PROVIDER), listMine);
 providerRouter.post('/me/services', auth(UserRole.PROVIDER), createMine);
 providerRouter.patch('/me/services/:id', auth(UserRole.PROVIDER), updateMine);
 providerRouter.delete('/me/services/:id', auth(UserRole.PROVIDER), deleteMine);
+providerRouter.get('/:providerId/reviews', publicProvider);
+providerRouter.get('/:providerId/rating-summary', providerSummary);
 providerRouter.get('/:id', getPublicProfile);
 
 export default providerRouter;
