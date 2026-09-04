@@ -14,7 +14,7 @@ import sendResponse from './shared/sendResponse.js';
 const app = express();
 
 if (config.env === 'production') {
-  // Render exposes the app through one trusted reverse-proxy hop.
+  // Render exposes the app through one trusted reverse-proxy hop
   app.set('trust proxy', 1);
 }
 
@@ -22,7 +22,7 @@ app.use(helmet());
 app.use(
   cors({
     origin(origin, callback) {
-      // Postman, Stripe, health checks, and server-to-server callers do not send Origin.
+      // Postman, Stripe, health checks, and server-to-server callers do not send Origin .
       if (!origin || config.cors.origins.includes(origin)) {
         callback(null, true);
         return;
