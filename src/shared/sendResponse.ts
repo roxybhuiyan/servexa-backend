@@ -6,6 +6,9 @@ type SendResponseOptions<T> = {
   data: T;
 };
 
+
+
+
 const sendResponse = <T>(res: Response, options: SendResponseOptions<T>): void => {
   res.status(options.statusCode).json({
     success: true,
