@@ -8,12 +8,30 @@ import helmet from 'helmet';
 
 import apiV1Router from './app/routes/index.js';
 import { webhook as stripeWebhook } from './app/modules/Payment/payment.controller.js';
+import config from './config/index.js';
 import sendResponse from './shared/sendResponse.js';
 
 const app = express();
 
+if (config.env === 'production') {
+  // Render exposes the app through one trusted reverse-proxy hop.
+  app.set('trust proxy', 1);
+}
+
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Postman, Stripe, health checks, and server-to-server callers do not send Origin.
+      if (!origin || config.cors.origins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new AppError(403, 'Origin is not allowed by CORS policy'));
+    },
+  }),
+);
 app.post('/api/v1/payments/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 app.use(express.json());
 app.use(

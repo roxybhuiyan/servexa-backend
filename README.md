@@ -30,7 +30,18 @@ documentation.
 `NODE_ENV`, `PORT`, `DATABASE_URL`, `DIRECT_URL`, `JWT_ACCESS_SECRET`,
 `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`,
 `BCRYPT_SALT_ROUNDS`, `PLATFORM_FEE_PERCENT`, `STRIPE_SECRET_KEY`,
-`STRIPE_WEBHOOK_SECRET`, `STRIPE_CURRENCY`, and `APP_BASE_URL`.
+`STRIPE_WEBHOOK_SECRET`, `STRIPE_CURRENCY`, `APP_BASE_URL`, and
+`CORS_ORIGINS`.
+
+### Browser origins and Render
+
+`CORS_ORIGINS` is a comma-separated allowlist of browser origins, such as
+`http://localhost:3000,http://localhost:5173` locally. In Render production,
+set it to the exact HTTPS frontend origins; wildcard origins are rejected.
+Requests without an `Origin` header (Stripe webhooks, Postman, health checks,
+and server-to-server callers) remain supported. The app trusts exactly one
+reverse-proxy hop in production so rate limiting uses the real client IP behind
+Render; local development does not enable proxy trust.
 
 ## Commands
 
@@ -86,6 +97,5 @@ payment state.
 The intended deployment target is **Render + Neon**. Steps 0–10 and final
 end-to-end QA are complete, including a real Stripe test-mode Checkout and
 signed webhook flow. Before a production deployment, complete the operational
-readiness items documented in the security/performance audit: restrict CORS to
-known frontend origins, configure proxy trust for Render, and remediate the
+readiness item documented in the security/performance audit: remediate the
 current Express/`qs` advisory chain through a tested dependency update.

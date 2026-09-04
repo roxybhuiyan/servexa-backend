@@ -1,9 +1,33 @@
 import 'dotenv/config';
 
+const env = process.env.NODE_ENV ?? 'development';
+
+const parseCorsOrigins = (value: string | undefined): string[] => {
+  const rawOrigins = value ?? (env === 'production' ? '' : 'http://localhost:3000');
+
+  return rawOrigins
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+    .map((origin) => {
+      if (origin === '*') throw new Error('CORS_ORIGINS must not contain a wildcard origin');
+
+      const url = new URL(origin);
+      if (url.origin !== origin || !['http:', 'https:'].includes(url.protocol)) {
+        throw new Error(`Invalid CORS origin: ${origin}`);
+      }
+
+      return origin;
+    });
+};
+
 const config = {
-  env: process.env.NODE_ENV ?? 'development',
+  env,
   port: Number(process.env.PORT ?? 5000),
   databaseUrl: process.env.DATABASE_URL,
+  cors: {
+    origins: parseCorsOrigins(process.env.CORS_ORIGINS),
+  },
   platformFeePercent: process.env.PLATFORM_FEE_PERCENT ?? '10',
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,
