@@ -16,7 +16,7 @@
 
 ## Indexes and constraints
 
-Unique constraints protect user email, provider profile user ID, category name/slug, service slug, booking slot ID, payment booking ID/transaction ID, and review booking ID. Query indexes support role/status, provider status/city, service provider/category/status/price/creation time, slot lookup, booking lookup, payment status, review lookup, token expiry, and audit-entity lookup.
+Unique constraints protect user email, provider profile user ID, category name/slug, service slug, booking slot ID, payment booking ID/transaction ID, and review booking ID. Query indexes support role/status, provider status/city, service provider/category/status/price/creation time, slot lookup, booking lookup, payment status, review lookup, token expiry, and audit entity/creation-time lookup.
 
 ## Soft deletion
 

@@ -1,0 +1,131 @@
+{
+  "info": {
+    "_postman_id": "a9bdba8e-5ef9-4f69-a2a7-25b6fe83941a",
+    "name": "Servexa API",
+    "description": "Servexa API collection. Use placeholder variables only. Stripe webhooks must be forwarded by Stripe CLI or Stripe, because a manually-created request cannot produce a valid signature.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "customerAccessToken", "value": "" },
+    { "key": "providerAccessToken", "value": "" },
+    { "key": "adminAccessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "customerEmail", "value": "customer@example.com" },
+    { "key": "customerPassword", "value": "StrongPassword123!" },
+    { "key": "providerEmail", "value": "provider@example.com" },
+    { "key": "providerPassword", "value": "StrongPassword123!" },
+    { "key": "adminEmail", "value": "admin@example.com" },
+    { "key": "adminPassword", "value": "StrongPassword123!" },
+    { "key": "customerId", "value": "" },
+    { "key": "providerId", "value": "" },
+    { "key": "providerProfileId", "value": "" },
+    { "key": "categoryId", "value": "" },
+    { "key": "serviceId", "value": "" },
+    { "key": "slotId", "value": "" },
+    { "key": "bookingId", "value": "" },
+    { "key": "paymentId", "value": "" },
+    { "key": "reviewId", "value": "" },
+    { "key": "auditLogId", "value": "" }
+  ],
+  "item": [
+    { "name": "00 - Health", "item": [
+      { "name": "Health", "request": { "method": "GET", "url": "{{baseUrl}}/health" } }
+    ] },
+    { "name": "01 - Auth", "item": [
+      { "name": "Register Customer", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Test Customer\",\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"{{customerPassword}}\",\n  \"phone\": \"01700000000\",\n  \"role\": \"CUSTOMER\"\n}"}, "url": "{{baseUrl}}/api/v1/auth/register" } },
+      { "name": "Register Provider", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Test Provider\",\n  \"email\": \"{{providerEmail}}\",\n  \"password\": \"{{providerPassword}}\",\n  \"phone\": \"01700000001\",\n  \"role\": \"PROVIDER\",\n  \"businessName\": \"Example Services\",\n  \"city\": \"Dhaka\",\n  \"address\": \"Example address\",\n  \"bio\": \"Example provider profile\"\n}"}, "url": "{{baseUrl}}/api/v1/auth/register" } },
+      { "name": "Login Customer", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"{{customerPassword}}\"\n}"}, "url": "{{baseUrl}}/api/v1/auth/login" }, "event": [{"listen":"test","script":{"type":"text/javascript","exec":["if (pm.response.code === 200) {","  const data = pm.response.json().data;","  pm.collectionVariables.set('customerAccessToken', data.accessToken);","  pm.collectionVariables.set('refreshToken', data.refreshToken);","}"]}}] },
+      { "name": "Login Provider", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"email\": \"{{providerEmail}}\",\n  \"password\": \"{{providerPassword}}\"\n}"}, "url": "{{baseUrl}}/api/v1/auth/login" }, "event": [{"listen":"test","script":{"type":"text/javascript","exec":["if (pm.response.code === 200) {","  const data = pm.response.json().data;","  pm.collectionVariables.set('providerAccessToken', data.accessToken);","  pm.collectionVariables.set('refreshToken', data.refreshToken);","}"]}}] },
+      { "name": "Login Admin", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"}, "url": "{{baseUrl}}/api/v1/auth/login" }, "event": [{"listen":"test","script":{"type":"text/javascript","exec":["if (pm.response.code === 200) {","  const data = pm.response.json().data;","  pm.collectionVariables.set('adminAccessToken', data.accessToken);","  pm.collectionVariables.set('refreshToken', data.refreshToken);","}"]}}] },
+      { "name": "Refresh Token", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{ \"refreshToken\": \"{{refreshToken}}\" }"}, "url": "{{baseUrl}}/api/v1/auth/refresh-token" } },
+      { "name": "Logout", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{ \"refreshToken\": \"{{refreshToken}}\" }"}, "url": "{{baseUrl}}/api/v1/auth/logout" } },
+      { "name": "Get Current User", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{customerAccessToken}}"}], "url": "{{baseUrl}}/api/v1/auth/me" } }
+    ] },
+    { "name": "02 - User", "item": [
+      { "name": "Get My Profile", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{customerAccessToken}}"}], "url": "{{baseUrl}}/api/v1/users/me" } },
+      { "name": "Update My Profile", "request": { "method": "PATCH", "header": [{"key":"Authorization","value":"Bearer {{customerAccessToken}}"},{"key":"Content-Type","value":"application/json"}], "body":{"mode":"raw","raw":"{ \"name\": \"Updated Customer\", \"phone\": \"01700000002\" }"}, "url": "{{baseUrl}}/api/v1/users/me" } }
+    ] },
+    { "name": "03 - Provider", "item": [
+      { "name": "Get My Provider Profile", "request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/providers/me"} },
+      { "name": "Update My Provider Profile", "request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{ \"businessName\": \"Updated Services\", \"city\": \"Dhaka\" }"},"url":"{{baseUrl}}/api/v1/providers/me"} },
+      { "name": "Get Public Provider", "request":{"method":"GET","url":"{{baseUrl}}/api/v1/providers/{{providerProfileId}}"} },
+      { "name": "Get My Services", "request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/providers/me/services?page=1&limit=10&status=ACTIVE&sortBy=createdAt&sortOrder=desc"} },
+      { "name": "Create Service", "request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Example Service\",\n  \"description\": \"Example description\",\n  \"price\": \"1000.00\",\n  \"duration\": 60,\n  \"serviceArea\": \"Dhaka\",\n  \"status\": \"ACTIVE\"\n}"},"url":"{{baseUrl}}/api/v1/providers/me/services"},"event":[{"listen":"test","script":{"type":"text/javascript","exec":["if (pm.response.code === 201) pm.collectionVariables.set('serviceId', pm.response.json().data.id);"]}}] },
+      { "name": "Update Service", "request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{ \"price\": \"1200.00\", \"status\": \"ACTIVE\" }"},"url":"{{baseUrl}}/api/v1/providers/me/services/{{serviceId}}"} },
+      { "name": "Delete Service", "request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/providers/me/services/{{serviceId}}"} },
+      { "name": "Get My Availability", "request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/providers/me/availability?serviceId={{serviceId}}&page=1&limit=10&sortOrder=asc"} },
+      { "name": "Create Availability", "request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{ \"serviceId\": \"{{serviceId}}\", \"startTime\": \"2030-01-01T10:00:00.000Z\", \"endTime\": \"2030-01-01T11:00:00.000Z\" }"},"url":"{{baseUrl}}/api/v1/providers/me/availability"},"event":[{"listen":"test","script":{"type":"text/javascript","exec":["if (pm.response.code === 201) pm.collectionVariables.set('slotId', pm.response.json().data.id);"]}}] },
+      { "name": "Update Availability", "request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{ \"startTime\": \"2030-01-01T12:00:00.000Z\", \"endTime\": \"2030-01-01T13:00:00.000Z\" }"},"url":"{{baseUrl}}/api/v1/providers/me/availability/{{slotId}}"} },
+      { "name": "Delete Availability", "request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/providers/me/availability/{{slotId}}"} },
+      { "name": "Get My Bookings", "request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/providers/me/bookings?page=1&limit=10&status=PENDING&sortOrder=desc"} },
+      { "name": "Get Provider Booking", "request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/providers/me/bookings/{{bookingId}}"} },
+      { "name": "Accept Booking", "request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/providers/me/bookings/{{bookingId}}/accept"} },
+      { "name": "Reject Booking", "request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/providers/me/bookings/{{bookingId}}/reject"} },
+      { "name": "Start Booking", "request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/providers/me/bookings/{{bookingId}}/start"} },
+      { "name": "Complete Booking", "request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{providerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/providers/me/bookings/{{bookingId}}/complete"} },
+      { "name": "Public Provider Reviews", "request":{"method":"GET","url":"{{baseUrl}}/api/v1/providers/{{providerProfileId}}/reviews?page=1&limit=10&rating=5&sortOrder=desc"} },
+      { "name": "Provider Rating Summary", "request":{"method":"GET","url":"{{baseUrl}}/api/v1/providers/{{providerProfileId}}/rating-summary"} }
+    ] },
+    { "name": "04 - Categories", "item": [
+      { "name":"Public Category List","request":{"method":"GET","url":"{{baseUrl}}/api/v1/categories"} },
+      { "name":"Admin Category List","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/categories?page=1&limit=10&search=home"} },
+      { "name":"Admin Create Category","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{ \"name\": \"Example Category\", \"slug\": \"example-category\", \"description\": \"Example category\" }"},"url":"{{baseUrl}}/api/v1/admin/categories"},"event":[{"listen":"test","script":{"type":"text/javascript","exec":["if (pm.response.code === 201) pm.collectionVariables.set('categoryId', pm.response.json().data.id);"]}}] },
+      { "name":"Admin Update Category","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{ \"description\": \"Updated category\" }"},"url":"{{baseUrl}}/api/v1/admin/categories/{{categoryId}}"} },
+      { "name":"Admin Delete Category","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/categories/{{categoryId}}"} }
+    ] },
+    { "name": "05 - Services", "item": [
+      { "name":"Public Service List","request":{"method":"GET","url":"{{baseUrl}}/api/v1/services?page=1&limit=10&sortBy=createdAt&sortOrder=desc"} },
+      { "name":"Public Service Detail","request":{"method":"GET","url":"{{baseUrl}}/api/v1/services/{{serviceId}}"} },
+      { "name":"Search Services","request":{"method":"GET","url":"{{baseUrl}}/api/v1/services?search=repair&page=1&limit=10"} },
+      { "name":"Filter by Category","request":{"method":"GET","url":"{{baseUrl}}/api/v1/services?category={{categoryId}}"} },
+      { "name":"Filter by Price","request":{"method":"GET","url":"{{baseUrl}}/api/v1/services?minPrice=500&maxPrice=1500"} },
+      { "name":"Filter by City","request":{"method":"GET","url":"{{baseUrl}}/api/v1/services?city=Dhaka"} },
+      { "name":"Service Availability","request":{"method":"GET","url":"{{baseUrl}}/api/v1/services/{{serviceId}}/availability?from=2030-01-01T00:00:00.000Z&to=2030-12-31T23:59:59.000Z&page=1&limit=10"} },
+      { "name":"Service Reviews","request":{"method":"GET","url":"{{baseUrl}}/api/v1/services/{{serviceId}}/reviews?page=1&limit=10&sortOrder=desc"} },
+      { "name":"Service Rating Summary","request":{"method":"GET","url":"{{baseUrl}}/api/v1/services/{{serviceId}}/rating-summary"} }
+    ] },
+    { "name": "06 - Bookings", "item": [
+      { "name":"Create Booking","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{customerAccessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{ \"serviceId\": \"{{serviceId}}\", \"slotId\": \"{{slotId}}\", \"notes\": \"Please arrive on time.\" }"},"url":"{{baseUrl}}/api/v1/bookings"},"event":[{"listen":"test","script":{"type":"text/javascript","exec":["if (pm.response.code === 201) pm.collectionVariables.set('bookingId', pm.response.json().data.id);"]}}] },
+      { "name":"My Bookings","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{customerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/bookings/me?page=1&limit=10&status=PENDING&sortOrder=desc"} },
+      { "name":"Booking Detail","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{customerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/bookings/{{bookingId}}"} },
+      { "name":"Cancel Booking","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{customerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel"} }
+    ] },
+    { "name": "07 - Payments", "item": [
+      { "name":"Initiate Stripe Checkout","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{customerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/payments/initiate/{{bookingId}}"} },
+      { "name":"Get Payment by Booking","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{customerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/payments/booking/{{bookingId}}"} },
+      { "name":"Stripe Webhook (documentation only)","request":{"method":"POST","description":"Do not send manually: Stripe signs raw payloads. Use: stripe listen --forward-to http://localhost:5000/api/v1/payments/stripe/webhook","url":"{{baseUrl}}/api/v1/payments/stripe/webhook"} },
+      { "name":"Payment Success Redirect (informational)","request":{"method":"GET","url":"{{baseUrl}}/payments/success?session_id={CHECKOUT_SESSION_ID}"} },
+      { "name":"Payment Cancel Redirect (informational)","request":{"method":"GET","url":"{{baseUrl}}/payments/cancel"} }
+    ] },
+    { "name": "08 - Reviews", "item": [
+      { "name":"Create Review","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{customerAccessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{ \"bookingId\": \"{{bookingId}}\", \"rating\": 5, \"comment\": \"Excellent service\" }"},"url":"{{baseUrl}}/api/v1/reviews"},"event":[{"listen":"test","script":{"type":"text/javascript","exec":["if (pm.response.code === 201) pm.collectionVariables.set('reviewId', pm.response.json().data.id);"]}}] },
+      { "name":"My Reviews","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{customerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/reviews/me?page=1&limit=10&rating=5&sortOrder=desc"} },
+      { "name":"Update Review","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{customerAccessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{ \"rating\": 4, \"comment\": \"Updated review\" }"},"url":"{{baseUrl}}/api/v1/reviews/{{reviewId}}"} },
+      { "name":"Delete Review","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{customerAccessToken}}"}],"url":"{{baseUrl}}/api/v1/reviews/{{reviewId}}"} }
+    ] },
+    { "name": "09 - Admin Users & Providers", "item": [
+      { "name":"List Users","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/users?page=1&limit=10&status=ACTIVE&search=test&sortBy=createdAt&sortOrder=desc"} },
+      { "name":"Get User","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/users/{{customerId}}"} },
+      { "name":"Update User Status","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{ \"status\": \"SUSPENDED\" }"},"url":"{{baseUrl}}/api/v1/admin/users/{{customerId}}/status"} },
+      { "name":"Soft Delete User","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/users/{{customerId}}"} },
+      { "name":"List Providers","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/providers?page=1&limit=10&status=PENDING&search=example&sortBy=createdAt&sortOrder=desc"} },
+      { "name":"Update Provider Status","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{ \"status\": \"APPROVED\" }"},"url":"{{baseUrl}}/api/v1/admin/providers/{{providerProfileId}}/status"} },
+      { "name":"Admin Review List","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/reviews?page=1&limit=10&serviceId={{serviceId}}&sortOrder=desc"} },
+      { "name":"Admin Delete Review","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/reviews/{{reviewId}}"} }
+    ] },
+    { "name": "10 - Admin Dashboard", "item": [
+      { "name":"Overview","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/dashboard/overview"} },
+      { "name":"Revenue","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/dashboard/revenue?from=2030-01-01T00:00:00.000Z&to=2030-12-31T23:59:59.000Z&providerId={{providerProfileId}}&serviceId={{serviceId}}"} },
+      { "name":"Booking Analytics","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/dashboard/bookings?from=2030-01-01T00:00:00.000Z&to=2030-12-31T23:59:59.000Z&providerId={{providerProfileId}}&serviceId={{serviceId}}&customerId={{customerId}}"} },
+      { "name":"Provider Analytics","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/dashboard/providers"} },
+      { "name":"Service Analytics","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/dashboard/services"} },
+      { "name":"Recent Activity","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/dashboard/recent-activity?limit=20"} }
+    ] },
+    { "name": "11 - Audit Logs", "item": [
+      { "name":"List Audit Logs","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/audit-logs?page=1&limit=20&action=BOOKING_CREATED&entityType=Booking&entityId={{bookingId}}&userId={{customerId}}&from=2030-01-01T00:00:00.000Z&to=2030-12-31T23:59:59.000Z&sortOrder=desc"} },
+      { "name":"Audit Log Detail","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminAccessToken}}"}],"url":"{{baseUrl}}/api/v1/admin/audit-logs/{{auditLogId}}"} }
+    ] }
+  ]
+}

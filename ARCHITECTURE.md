@@ -18,4 +18,6 @@ Prisma ORM
 PostgreSQL / Neon
 ```
 
-Servexa is API-first; a frontend is not required for this assignment. JWT authentication, RBAC, and payment integration will be added later. Redis is optional and will be evaluated later.
+Servexa is API-first; a frontend is not required for this assignment. It uses
+JWT authentication, route-level RBAC, Prisma/PostgreSQL persistence, and Stripe
+Checkout with signed webhooks. Redis remains optional and has not been added.
