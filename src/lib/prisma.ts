@@ -21,6 +21,8 @@ const adapter = new PrismaPg(pool, { disposeExternalPool: true });
 const prisma = globalForPrisma.prisma ?? new PrismaClient({
   adapter,
   transactionOptions: {
+
+    
     // Neon may need longer than Prisma's 2s default to acquire a pooled connection.
     // Keep the transaction atomic while allowing the pg pool's 10s acquisition window.
     maxWait: 15_000,
