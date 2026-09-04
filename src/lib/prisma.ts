@@ -11,6 +11,9 @@ if (!config.databaseUrl) {
   throw new Error('DATABASE_URL is required to initialize Prisma.');
 }
 
+
+
+
 const pool = globalForPrisma.pool ?? new Pool({
   connectionString: config.databaseUrl,
   max: 5,
