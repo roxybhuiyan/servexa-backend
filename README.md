@@ -81,6 +81,7 @@ Full endpoint, request, workflow, and error documentation is in
 
 ### Local Stripe webhook testing
 
+
 Configure Stripe test credentials locally, run the API, then forward Stripe
 events with:
 
