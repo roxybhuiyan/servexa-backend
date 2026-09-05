@@ -14,6 +14,8 @@ if (!config.databaseUrl) {
 
 
 
+
+
 const pool = globalForPrisma.pool ?? new Pool({
   connectionString: config.databaseUrl,
   max: 5,
