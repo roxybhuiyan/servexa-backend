@@ -20,6 +20,8 @@ const auth =
         throw new AppError(401, 'Authentication is required');
       }
 
+
+      
       const payload = verifyAccessToken(token);
       const user = await prisma.user.findFirst({
         where: {
