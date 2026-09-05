@@ -12,6 +12,8 @@ import reviewRouter from '../modules/Review/review.route.js';
 
 const apiV1Router = Router();
 
+
+
 apiV1Router.use('/auth', authRouter);
 apiV1Router.use('/users', userRouter);
 apiV1Router.use('/providers', providerRouter);
