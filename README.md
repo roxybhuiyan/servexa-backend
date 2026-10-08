@@ -1,7 +1,7 @@
 # Servexa Backend
 
 Servexa is an API-first, on-demand service booking marketplace. Customers book
-provider-owned services, providers manage availability and booking work, and
+provider-owned services, providers accept or reject independent orders, and
 administrators moderate marketplace data and review reporting/audit activity.
 
 ## Stack
@@ -68,10 +68,10 @@ Full endpoint, request, workflow, and error documentation is in
 
 ## Core workflow
 
-1. A customer registers/logs in and creates a booking for a future available
-   slot on an approved provider's active service.
-2. The provider accepts or rejects it. Slots are reserved atomically and
-   `Booking.slotId` is unique, preventing double booking.
+1. A customer orders an approved provider's active service with `{ serviceId, notes? }`.
+   The server creates a PENDING order and snapshots its price; no slot is required.
+2. The provider accepts or rejects the independent order. Multiple orders of the
+   same service are allowed; no inventory or scheduling is involved.
 3. The customer starts Stripe Checkout only after the booking is `ACCEPTED`.
    Amounts are trusted persisted booking snapshots, never client totals.
 4. Stripe's signed `checkout.session.completed` webhook marks the payment
@@ -100,3 +100,28 @@ end-to-end QA are complete, including a real Stripe test-mode Checkout and
 signed webhook flow. Before a production deployment, complete the operational
 readiness item documented in the security/performance audit: remediate the
 current Express/`qs` advisory chain through a tested dependency update.
+
+
+## Service-order migration and deployment
+
+Migration: `20261008120000_service_orders_optional_legacy_slot`.
+It only runs `ALTER TABLE "Booking" ALTER COLUMN "slotId" DROP NOT NULL`.
+Existing IDs, booking rows, slot links, unique index, foreign key, payments,
+reviews and audit history remain intact. New orders omit slotId (NULL).
+The optional relation explicitly retains ON DELETE RESTRICT.
+
+Apply this migration **before** running the updated API. Regenerate Prisma with
+`npm run prisma:generate`, then run `npm run typecheck`, `npm test`, and `npm run build`.
+Use `npx prisma migrate deploy` only after verifying DATABASE_URL targets the
+intended database and obtaining the required deployment authorization. Do not
+use db push/reset or modify the historical initial migration.
+
+The inspected configured database is hosted Neon, not local PostgreSQL. Its
+read-only compatibility check found 3 bookings, 3 payments, 4 slots, and no
+orphan slot links. This migration has deliberately not been applied there.
+Schema validation and schema-to-schema SQL diff are offline checks, not evidence
+of a completed database migration. Old backend builds that assume required
+slots must not be rolled back over new slot-free orders without compatibility work.
+
+The backend test suite uses isolated Prisma/Stripe test doubles and cannot connect
+to the application database. Live database and Stripe verification are separate.

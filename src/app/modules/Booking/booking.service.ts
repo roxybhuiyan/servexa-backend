@@ -1,12 +1,12 @@
 import { Prisma } from '../../../generated/prisma/client.js';
-import { BookingStatus, PaymentStatus, ProviderStatus, ServiceStatus, UserStatus } from '../../../generated/prisma/enums.js';
+import { BookingStatus, PaymentStatus, ProviderStatus, ServiceStatus, UserStatus, UserRole } from '../../../generated/prisma/enums.js';
 import { createAuditLog } from '../../../helpers/auditLog.js';
 import prisma from '../../../lib/prisma.js';
 import config from '../../../config/index.js';
 import AppError from '../../errors/AppError.js';
 
 type AuditContext = { ipAddress?: string; userAgent?: string };
-type BookingPayload = { serviceId: string; slotId: string; notes?: string };
+type BookingPayload = { serviceId: string; notes?: string };
 type BookingListQuery = { page: number; limit: number; status?: BookingStatus; serviceId?: string; sortOrder: 'asc' | 'desc' };
 
 const pageData = <T>(data: T[], total: number, page: number, limit: number) => ({
@@ -19,7 +19,7 @@ const customerBookingSelect = {
   createdAt: true, updatedAt: true, cancelledAt: true, completedAt: true,
   service: { select: { id: true, title: true, slug: true, duration: true, imageUrl: true } },
   provider: { select: { id: true, businessName: true, city: true, phone: true } },
-  slot: { select: { id: true, startTime: true, endTime: true, isBooked: true } }, payment: paymentSelect,
+  payment: paymentSelect,
 } as const;
 const providerBookingSelect = {
   ...customerBookingSelect,
@@ -34,7 +34,7 @@ const calculatePrice = (servicePrice: Prisma.Decimal) => {
 
 const requireCustomer = async (userId: string) => {
   const customer = await prisma.user.findFirst({
-    where: { id: userId, status: UserStatus.ACTIVE, deletedAt: null }, select: { id: true },
+    where: { id: userId, role: UserRole.CUSTOMER, status: UserStatus.ACTIVE, deletedAt: null }, select: { id: true },
   });
   if (!customer) throw new AppError(403, 'An active customer account is required');
   return customer;
@@ -49,7 +49,7 @@ const requireApprovedProvider = async (userId: string) => {
   return provider;
 };
 
-const canFreeSlot = (payment: { status: PaymentStatus } | null) => !payment || payment.status !== PaymentStatus.PAID;
+const canCancelUnpaid = (payment: { status: PaymentStatus } | null) => !payment || payment.status !== PaymentStatus.PAID;
 const transition = (from: BookingStatus, to: BookingStatus) => {
   const allowed: Record<BookingStatus, BookingStatus[]> = {
     PENDING: [BookingStatus.ACCEPTED, BookingStatus.REJECTED, BookingStatus.CANCELLED],
@@ -74,44 +74,28 @@ const findProviderBooking = async (providerId: string, id: string) => {
 
 export const createBooking = async (customerId: string, payload: BookingPayload, context: AuditContext) => {
   await requireCustomer(customerId);
-  try {
-    return await prisma.$transaction(async (transaction) => {
-      const slot = await transaction.availabilitySlot.findFirst({
-        where: { id: payload.slotId },
-        select: {
-          id: true, providerId: true, serviceId: true, startTime: true, isBooked: true,
-          service: { select: {
-            id: true, price: true, status: true, deletedAt: true, category: { select: { deletedAt: true } },
-            provider: { select: { id: true, userId: true, status: true, deletedAt: true, user: { select: { status: true, deletedAt: true } } }, },
-          } },
-        },
-      });
-      if (!slot || slot.serviceId !== payload.serviceId || slot.providerId !== slot.service.provider.id) throw new AppError(404, 'Available slot not found');
-      const provider = slot.service.provider;
-      if (slot.isBooked || slot.startTime <= new Date()) throw new AppError(409, 'Slot is no longer available');
-      if (slot.service.status !== ServiceStatus.ACTIVE || slot.service.deletedAt || slot.service.category.deletedAt) throw new AppError(404, 'Service not found');
-      if (provider.status !== ProviderStatus.APPROVED || provider.deletedAt || provider.user.status !== UserStatus.ACTIVE || provider.user.deletedAt) throw new AppError(404, 'Service not found');
-      if (provider.userId === customerId) throw new AppError(403, 'You cannot book your own service');
-
-      const reserved = await transaction.availabilitySlot.updateMany({
-        where: { id: slot.id, isBooked: false, startTime: { gt: new Date() } }, data: { isBooked: true },
-      });
-      if (reserved.count !== 1) throw new AppError(409, 'Slot is no longer available');
-      const money = calculatePrice(slot.service.price);
-      const booking = await transaction.booking.create({
-        data: { customerId, providerId: slot.providerId, serviceId: slot.serviceId, slotId: slot.id, notes: payload.notes, ...money },
-        select: customerBookingSelect,
-      });
-      await createAuditLog(transaction, {
-        userId: customerId, action: 'BOOKING_CREATED', entityType: 'Booking', entityId: booking.id,
-        newData: { status: booking.status, serviceId: booking.service.id, slotId: booking.slot.id, totalAmount: booking.totalAmount.toString() }, ...context,
-      });
-      return booking;
+  return prisma.$transaction(async (transaction) => {
+    const service = await transaction.service.findFirst({
+      where: { id: payload.serviceId, status: ServiceStatus.ACTIVE, deletedAt: null,
+        category: { deletedAt: null },
+        provider: { status: ProviderStatus.APPROVED, deletedAt: null,
+          user: { status: UserStatus.ACTIVE, deletedAt: null } },
+      },
+      select: { id: true, price: true, providerId: true, provider: { select: { userId: true } } },
     });
-  } catch (error) {
-    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') throw new AppError(409, 'Slot is already booked');
-    throw error;
-  }
+    if (!service) throw new AppError(404, 'Service not found');
+    if (service.provider.userId === customerId) throw new AppError(403, 'You cannot book your own service');
+    const booking = await transaction.booking.create({
+      data: { customerId, providerId: service.providerId, serviceId: service.id,
+        notes: payload.notes, status: BookingStatus.PENDING, ...calculatePrice(service.price) },
+      select: customerBookingSelect,
+    });
+    await createAuditLog(transaction, {
+      userId: customerId, action: 'BOOKING_CREATED', entityType: 'Booking', entityId: booking.id,
+      newData: { status: booking.status, serviceId: booking.service.id, totalAmount: booking.totalAmount.toString() }, ...context,
+    });
+    return booking;
+  });
 };
 
 export const listCustomerBookings = async (customerId: string, query: BookingListQuery) => {
@@ -126,10 +110,9 @@ export const getCustomerBooking = (customerId: string, id: string) => findCustom
 export const cancelBooking = async (customerId: string, id: string, context: AuditContext) => {
   const booking = await findCustomerBooking(customerId, id);
   transition(booking.status, BookingStatus.CANCELLED);
-  if (!canFreeSlot(booking.payment)) throw new AppError(409, 'A paid booking cannot be cancelled until refund handling is available');
+  if (!canCancelUnpaid(booking.payment)) throw new AppError(409, 'A paid booking cannot be cancelled until refund handling is available');
   return prisma.$transaction(async (transaction) => {
     const updated = await transaction.booking.update({ where: { id }, data: { status: BookingStatus.CANCELLED, cancelledAt: new Date() }, select: customerBookingSelect });
-    await transaction.availabilitySlot.update({ where: { id: booking.slot.id }, data: { isBooked: false } });
     await createAuditLog(transaction, { userId: customerId, action: 'BOOKING_CANCELLED', entityType: 'Booking', entityId: id, oldData: { status: booking.status }, newData: { status: updated.status }, ...context });
     return updated;
   });
@@ -149,10 +132,9 @@ const updateProviderBooking = async (userId: string, id: string, status: Booking
   const provider = await requireApprovedProvider(userId);
   const booking = await findProviderBooking(provider.id, id);
   transition(booking.status, status);
-  if (status === BookingStatus.REJECTED && !canFreeSlot(booking.payment)) throw new AppError(409, 'A paid booking cannot be rejected until refund handling is available');
+  if (status === BookingStatus.REJECTED && !canCancelUnpaid(booking.payment)) throw new AppError(409, 'A paid booking cannot be rejected until refund handling is available');
   return prisma.$transaction(async (transaction) => {
     const updated = await transaction.booking.update({ where: { id }, data: { status, ...(status === BookingStatus.COMPLETED ? { completedAt: new Date() } : {}) }, select: providerBookingSelect });
-    if (status === BookingStatus.REJECTED) await transaction.availabilitySlot.update({ where: { id: booking.slot.id }, data: { isBooked: false } });
     await createAuditLog(transaction, { userId, action, entityType: 'Booking', entityId: id, oldData: { status: booking.status }, newData: { status: updated.status }, ...context });
     return updated;
   });

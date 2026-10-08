@@ -41,7 +41,7 @@ all paginated lists return `data.meta` and `data.data`.
 | Provider bookings | GET | `/providers/me/bookings` | PROVIDER | `page,limit,status,serviceId,sortOrder`. |
 | Provider bookings | GET | `/providers/me/bookings/:id` | PROVIDER | Own assigned booking only. |
 | Provider bookings | PATCH | `/providers/me/bookings/:id/accept` | PROVIDER | `PENDING → ACCEPTED`. |
-| Provider bookings | PATCH | `/providers/me/bookings/:id/reject` | PROVIDER | `PENDING → REJECTED`; eligible slot is freed. |
+| Provider bookings | PATCH | `/providers/me/bookings/:id/reject` | PROVIDER | `PENDING → REJECTED`; no payment is allowed. |
 | Provider bookings | PATCH | `/providers/me/bookings/:id/start` | PROVIDER | `CONFIRMED → IN_PROGRESS`. |
 | Provider bookings | PATCH | `/providers/me/bookings/:id/complete` | PROVIDER | `IN_PROGRESS → COMPLETED`. |
 | Provider availability | GET/POST | `/providers/me/availability` | PROVIDER | List filters or create `{ serviceId,startTime,endTime }`. |
@@ -57,7 +57,7 @@ all paginated lists return `data.meta` and `data.data`.
 | Services | GET | `/services/:serviceId/reviews` | Public | Public reviews; `page,limit,rating,sortOrder`. |
 | Services | GET | `/services/:serviceId/rating-summary` | Public | Aggregate rating summary. |
 | Services | GET | `/services/:id` | Public | Eligible public service detail. |
-| Bookings | POST | `/bookings` | CUSTOMER | `{ serviceId,slotId,notes? }`; creates `PENDING` booking. |
+| Bookings | POST | `/bookings` | CUSTOMER | `{ serviceId,notes? }`; creates `PENDING` booking. |
 | Bookings | GET | `/bookings/me` | CUSTOMER | `page,limit,status,serviceId,sortOrder`. |
 | Bookings | GET | `/bookings/:id` | CUSTOMER | Own booking only. |
 | Bookings | PATCH | `/bookings/:id/cancel` | CUSTOMER | Eligible cancellation. |
@@ -117,10 +117,11 @@ IN_PROGRESS → COMPLETED
 ```
 
 Providers accept/reject/start/complete their own approved-profile bookings.
-Customers cancel their own eligible unpaid bookings. Creating a booking
-atomically reserves a future slot; `Booking.slotId` is unique as a final
-database safeguard. The server snapshots `servicePrice`, `platformFee`, and
-`totalAmount` using Decimal arithmetic, so client totals are ignored.
+Customers cancel their own eligible unpaid bookings. Creating an order validates
+an active service owned by an approved active provider. It creates an independent
+PENDING booking without querying or reserving availability. Multiple customers
+can order the same service; there is no capacity, quantity, or inventory field. The server snapshots `servicePrice`, `platformFee`, and
+`totalAmount` using Decimal arithmetic, and client-supplied totals are rejected.
 
 For Stripe: the customer initiates Checkout for an `ACCEPTED` booking; the
 server uses persisted totals and creates a Checkout Session. Stripe then POSTs
@@ -159,3 +160,19 @@ authorization, database URLs, webhook/card data) without mutating stored logs.
 | Postman collection and API documentation | PASS |
 | End-to-end review, ratings, analytics, and audit QA | PASS |
 | Render + Neon deployment execution | DEFERRED |
+
+
+## Service-order contract (October 2026)
+
+`POST /api/v1/bookings` requires CUSTOMER authentication and a strict JSON body:
+```json
+{ "serviceId": "existing-active-service-id", "notes": "Optional project brief" }
+```
+`slotId` is no longer accepted. Responses retain IDs, server-calculated prices,
+service/provider/customer details, timestamps, status, notes and payment fields;
+the `slot` object is no longer returned. Order dates are `createdAt`.
+Provider accept/reject routes and payment endpoints are unchanged. PAID is a
+payment status; the corresponding booking status becomes CONFIRMED after the
+existing verified Stripe webhook. Rejected/cancelled orders cannot initiate payment.
+Availability endpoints remain legacy APIs, unused by the application workflow.
+Existing slot links are retained as nullable database fields only.

@@ -400,9 +400,9 @@ export type AvailabilitySlotMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
-export type AvailabilitySlotScalarRelationFilter = {
-  is?: Prisma.AvailabilitySlotWhereInput
-  isNot?: Prisma.AvailabilitySlotWhereInput
+export type AvailabilitySlotNullableScalarRelationFilter = {
+  is?: Prisma.AvailabilitySlotWhereInput | null
+  isNot?: Prisma.AvailabilitySlotWhereInput | null
 }
 
 export type AvailabilitySlotCreateNestedManyWithoutProviderInput = {
@@ -499,10 +499,12 @@ export type AvailabilitySlotCreateNestedOneWithoutBookingInput = {
   connect?: Prisma.AvailabilitySlotWhereUniqueInput
 }
 
-export type AvailabilitySlotUpdateOneRequiredWithoutBookingNestedInput = {
+export type AvailabilitySlotUpdateOneWithoutBookingNestedInput = {
   create?: Prisma.XOR<Prisma.AvailabilitySlotCreateWithoutBookingInput, Prisma.AvailabilitySlotUncheckedCreateWithoutBookingInput>
   connectOrCreate?: Prisma.AvailabilitySlotCreateOrConnectWithoutBookingInput
   upsert?: Prisma.AvailabilitySlotUpsertWithoutBookingInput
+  disconnect?: Prisma.AvailabilitySlotWhereInput | boolean
+  delete?: Prisma.AvailabilitySlotWhereInput | boolean
   connect?: Prisma.AvailabilitySlotWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.AvailabilitySlotUpdateToOneWithWhereWithoutBookingInput, Prisma.AvailabilitySlotUpdateWithoutBookingInput>, Prisma.AvailabilitySlotUncheckedUpdateWithoutBookingInput>
 }

@@ -2,6 +2,7 @@ class AppError extends Error {
   public readonly statusCode: number;
   public readonly details?: unknown;
 
+  //
   constructor(statusCode: number, message: string, details?: unknown) {
     super(message);
     this.name = 'AppError';
@@ -9,7 +10,6 @@ class AppError extends Error {
     this.details = details;
   }
 }
-
 
 //
 export default AppError;

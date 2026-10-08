@@ -12,7 +12,6 @@ export const bookingIdValidationSchema = z.object({ id: z.string().trim().min(1)
 export const createBookingValidationSchema = z
   .object({
     serviceId: z.string().trim().min(1),
-    slotId: z.string().trim().min(1),
     notes: z.string().trim().max(2000).optional(),
   })
   .strict();
